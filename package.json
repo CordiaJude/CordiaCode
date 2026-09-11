@@ -1,0 +1,32 @@
+{
+  "name": "@cordia/collab",
+  "version": "0.1.0",
+  "description": "CLI for managing git worktrees per task against a shared Supabase task registry",
+  "type": "module",
+  "bin": {
+    "collab": "./dist/bin/collab.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx bin/collab.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4",
+    "commander": "^12.1.0",
+    "nanoid": "^5.0.7",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/prompts": "^2.4.9",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}
