@@ -108,24 +108,54 @@ export async function currentBranch(cwd: string): Promise<string> {
 }
 
 /**
- * Ensures `.collab/` never shows up as untracked in a worktree's
- * `git status`. Writes to the repo's local (uncommitted) exclude file, not
- * the target repo's tracked .gitignore — that file belongs to the repo's
- * own users, and this repo may not know anything about `.collab/`.
- * `--git-path info/exclude` resolves to the *common* .git dir shared by all
- * worktrees, so this only ever needs to happen once per repo; idempotent
- * either way in case it's called again.
+ * Ensures `entry` (e.g. `.collab/` or `TASK.md`) never shows up as untracked
+ * in a worktree's `git status`. Writes to the repo's local (uncommitted)
+ * exclude file, not the target repo's tracked .gitignore — that file belongs
+ * to the repo's own users, and this repo may not know anything about
+ * collab's generated files. `--git-path info/exclude` resolves to the
+ * *common* .git dir shared by all worktrees, so this only ever needs to
+ * happen once per repo; idempotent either way in case it's called again.
+ *
+ * This has no effect on a path the target repo already tracks — excluding a
+ * tracked file doesn't stop `git status` from reporting it modified once
+ * collab overwrites its content. See `ensureFileHidden` for that case.
  */
-export async function ensureCollabDirExcluded(cwd: string): Promise<void> {
+export async function ensureExcluded(entry: string, cwd: string): Promise<void> {
   const rawPath = await git(["rev-parse", "--git-path", "info/exclude"], cwd);
   const excludePath = isAbsolute(rawPath) ? rawPath : join(cwd, rawPath);
   const existing = existsSync(excludePath) ? readFileSync(excludePath, "utf8") : "";
   const alreadyExcluded = existing
     .split("\n")
-    .some((line) => line.trim() === ".collab/");
+    .some((line) => line.trim() === entry);
   if (!alreadyExcluded) {
     const prefix = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
-    appendFileSync(excludePath, `${prefix}.collab/\n`, "utf8");
+    appendFileSync(excludePath, `${prefix}${entry}\n`, "utf8");
+  }
+}
+
+async function isTracked(path: string, cwd: string): Promise<boolean> {
+  try {
+    await git(["ls-files", "--error-unmatch", path], cwd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ensures `path` never shows up in a worktree's `git status`, covering both
+ * ways collab can put it there: freshly created (untracked — hidden via the
+ * same exclude-file mechanism as `.collab/`), or already tracked by the
+ * target repo (collab overwrites it in place, which `git status` reports as
+ * modified regardless of the exclude file). For the tracked case, this marks
+ * the path `skip-worktree` in *this worktree's own index* — every worktree
+ * has its own index file, so this never affects any other worktree or the
+ * repo's history. Idempotent either way in case it's called again.
+ */
+export async function ensureFileHidden(path: string, cwd: string): Promise<void> {
+  await ensureExcluded(path, cwd);
+  if (await isTracked(path, cwd)) {
+    await git(["update-index", "--skip-worktree", path], cwd);
   }
 }
 

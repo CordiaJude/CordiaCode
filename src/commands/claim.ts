@@ -8,7 +8,8 @@ import {
   addWorktree,
   branchExists,
   createBranch,
-  ensureCollabDirExcluded,
+  ensureExcluded,
+  ensureFileHidden,
   fetchBranch,
   repoRoot,
 } from "../lib/git.js";
@@ -77,7 +78,11 @@ export function registerClaim(program: Command): void {
       // "dirty" worktree and refuse cleanup unless --force is passed every
       // time. This is local machine state, so it goes in the repo's
       // (uncommitted) exclude file, never the target repo's own .gitignore.
-      await ensureCollabDirExcluded(targetPath);
+      await ensureExcluded(".collab/", targetPath);
+      // Same problem for TASK.md, plus: if the target repo already tracks a
+      // TASK.md, overwriting it below would show up as modified instead of
+      // untracked, which the exclude file alone can't hide.
+      await ensureFileHidden("TASK.md", targetPath);
 
       writeWorktreeFiles(targetPath, task, { taskId: task.id, branch, base });
       // Each worktree carries its own copy of config.json (not the anon key
