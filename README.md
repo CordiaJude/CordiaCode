@@ -33,6 +33,14 @@ identity (used as the task `assignee`). Writes `.collab/config.json`
 - `collab done <task-id>` — after the PR merges: clean up worktree/branch
 - `collab abandon <task-id> [--force]` — release a claim without merging
 
+## Web UI
+
+`web/` is a Next.js app with a task board — a live view of the same Supabase
+task registry the CLI uses, for browsing status/assignee/repo and creating
+new tasks from the browser. `collab claim`/`submit`/`done`/`abandon` stay
+CLI-only, since they touch local git (worktrees, branches, `gh` PRs); the web
+board can't perform those.
+
 ## Requirements
 
 - Node 20+
