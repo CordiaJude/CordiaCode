@@ -9,7 +9,7 @@ import { getPullRequestStatus, isGenuinelyMergeable, parsePrUrl } from "@/lib/gi
 import type { Task } from "@/lib/types";
 
 export default async function TaskDetailPage({ params }: { params: { id: string } }) {
-  await requireAllowedUser();
+  const { githubLogin } = await requireAllowedUser();
 
   const client = getServiceClient();
   const { data: task, error: fetchError } = await client
@@ -21,7 +21,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
   if (fetchError) {
     return (
       <>
-        <Nav current="board" />
+        <Nav current="board" githubLogin={githubLogin} />
         <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
           <EmptyState
             eyebrow="Something went wrong"
@@ -36,7 +36,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
   if (!task) {
     return (
       <>
-        <Nav current="board" />
+        <Nav current="board" githubLogin={githubLogin} />
         <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
           <EmptyState
             eyebrow="Not found"
@@ -124,7 +124,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
 
   return (
     <>
-      <Nav current="board" />
+      <Nav current="board" githubLogin={githubLogin} />
       <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
         <p className="text-eyebrow font-label text-muted mb-2">{task.id}</p>
         <h1 className="text-h1 mb-4">{task.title}</h1>

@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
-import { requireAllowedUser } from "@/lib/auth";
 
-export async function Nav({ current }: { current: "board" | "new" }) {
-  const { githubLogin } = await requireAllowedUser();
+export function Nav({
+  current,
+  githubLogin,
+}: {
+  current: "board" | "new";
+  githubLogin: string;
+}) {
   const initials = githubLogin.slice(0, 2).toUpperCase();
 
   return (
