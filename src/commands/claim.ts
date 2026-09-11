@@ -8,6 +8,7 @@ import {
   addWorktree,
   branchExists,
   createBranch,
+  ensureCollabDirExcluded,
   fetchBranch,
   repoRoot,
 } from "../lib/git.js";
@@ -70,6 +71,13 @@ export function registerClaim(program: Command): void {
           `${targetPath} already exists and isn't a git worktree. Remove it manually and re-run.`
         );
       }
+
+      // Without this, .collab/ shows up as untracked in every worktree's
+      // `git status`, which makes `collab done`/`abandon` see a permanently
+      // "dirty" worktree and refuse cleanup unless --force is passed every
+      // time. This is local machine state, so it goes in the repo's
+      // (uncommitted) exclude file, never the target repo's own .gitignore.
+      await ensureCollabDirExcluded(targetPath);
 
       writeWorktreeFiles(targetPath, task, { taskId: task.id, branch, base });
       // Each worktree carries its own copy of config.json (not the anon key

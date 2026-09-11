@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { readFileSync, existsSync, appendFileSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 import { GitError } from "./errors.js";
 
 const execFileAsync = promisify(execFile);
@@ -103,6 +105,28 @@ export async function aheadCount(branch: string, base: string, cwd: string): Pro
 
 export async function currentBranch(cwd: string): Promise<string> {
   return git(["rev-parse", "--abbrev-ref", "HEAD"], cwd);
+}
+
+/**
+ * Ensures `.collab/` never shows up as untracked in a worktree's
+ * `git status`. Writes to the repo's local (uncommitted) exclude file, not
+ * the target repo's tracked .gitignore — that file belongs to the repo's
+ * own users, and this repo may not know anything about `.collab/`.
+ * `--git-path info/exclude` resolves to the *common* .git dir shared by all
+ * worktrees, so this only ever needs to happen once per repo; idempotent
+ * either way in case it's called again.
+ */
+export async function ensureCollabDirExcluded(cwd: string): Promise<void> {
+  const rawPath = await git(["rev-parse", "--git-path", "info/exclude"], cwd);
+  const excludePath = isAbsolute(rawPath) ? rawPath : join(cwd, rawPath);
+  const existing = existsSync(excludePath) ? readFileSync(excludePath, "utf8") : "";
+  const alreadyExcluded = existing
+    .split("\n")
+    .some((line) => line.trim() === ".collab/");
+  if (!alreadyExcluded) {
+    const prefix = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
+    appendFileSync(excludePath, `${prefix}.collab/\n`, "utf8");
+  }
 }
 
 export interface GithubRemote {
