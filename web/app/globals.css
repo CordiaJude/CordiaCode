@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-white text-body font-body;
+    font-size: 15px;
+    line-height: 24px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-heading text-ink;
+    font-weight: 500;
+  }
+}
